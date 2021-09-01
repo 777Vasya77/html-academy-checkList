@@ -2,6 +2,15 @@ const projectName = location.pathname.split('/').pop(); // get course project na
 const STORAGE_KEY = `htmlacademy-${projectName}-checklist`;
 
 /**
+ * Get and parse state from local storage
+ *
+ * @returns {array}
+ */
+const getState = () => {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+}
+
+/**
  * Update state in local storage
  *
  * @param {string[]} state
@@ -44,6 +53,23 @@ const createCheckbox = () => {
 }
 
 /**
+ * Create Progress Bar Element
+ *
+ * @param initValue
+ * @return {HTMLProgressElement}
+ */
+const createProgressBar = (initValue = 0) => {
+  const progress = document.createElement('progress')
+  progress.id = 'progress'
+  progress.value = initValue;
+  progress.max = 100;
+  progress.style.width = '100%';
+  progress.style.height = '30px';
+
+  return progress;
+}
+
+/**
  * Get Specification Elements
  *
  * @returns {HTMLElement[]}
@@ -53,37 +79,85 @@ const getSpecificationItems = () => {
 }
 
 /**
+ * Handle click on checkbox
+ *
+ * @param {HTMLElement} item
+ * @returns {function(): (void)}
+ */
+const checkboxClickHandler = (item) => {
+  return () => {
+    const state = getState();
+    const itemText = item.innerText;
+
+    if (item.classList.contains('strikeout')) {
+      uncompleteItem(item);
+
+      const newState = state.filter((s) => s !== itemText);
+      updateState(newState);
+      updateProgressBar();
+      return;
+    }
+
+    state.push(itemText);
+    updateState(state);
+    updateProgressBar();
+    completeItem(item);
+  }
+}
+
+/**
+ * Count Complete Percent
+ *
+ * @return {string}
+ */
+const countCompletePercent = () => {
+  const items = getSpecificationItems().length;
+  const completeList = getState().length;
+
+  return ((completeList / items) * 100).toFixed(2);
+};
+
+/**
+ * Update Progress Bar
+ *
+ * @returns {void}
+ */
+const updateProgressBar = () => {
+  const progressBar = document.querySelector('#progress')
+  progressBar.value = countCompletePercent();
+}
+
+/**
+ * Insert Progress Bar
+ *
+ * @returns {void}
+ */
+const insertProgressBar = () => {
+  const specification = document.querySelector('#specification');
+  specification.prepend(createProgressBar(countCompletePercent()));
+}
+
+/**
  * Append custom checkbox to the specification items
+ *
+ * @returns {void}
  */
 const init = () => {
   const items = getSpecificationItems();
+  const completeList = getState();
+
+  insertProgressBar();
 
   items.forEach((item) => {
     const checkbox = createCheckbox();
     const itemText = item.innerText;
-
-    const completeList = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
     if (completeList.includes(itemText)) {
       checkbox.checked = true;
       completeItem(item);
     }
 
-    checkbox.addEventListener('click', () => {
-      let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-
-      if (item.classList.contains('strikeout')) {
-        uncompleteItem(item);
-
-        state = state.filter((s) => s !== itemText);
-        updateState(state);
-        return;
-      }
-
-      state.push(itemText);
-      updateState(state);
-      completeItem(item);
-    })
+    checkbox.addEventListener('click', checkboxClickHandler(item));
 
     if (item.querySelector('p')) { // if item has paragraph, prepend checkbox into paragraph
       item.querySelector('p').prepend(checkbox);
