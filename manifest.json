@@ -1,11 +1,8 @@
 {
   "name": "HTML Academy CheckList",
-  "version": "1.2",
+  "version": "1.2.1",
   "description": "HTML Academy Checklist for Student Course Projects",
-  "permissions": [
-    "activeTab",
-    "storage"
-  ],
+  "permissions": [],
   "content_scripts": [
     {
       "matches": ["https://up.htmlacademy.ru/*/project/*"],
